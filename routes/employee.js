@@ -5,8 +5,8 @@ const auth = require('../middleware/auth');
 
 const userController = require('../controllers/employee')
 
-router.post('/signup', auth.authorizationsignup, userController.signup);
-router.post('/login', userController.login);
+router.post('/create-user', auth.authorizationsignup, userController.signup);
+router.post('/signin', userController.login);
 
 
 

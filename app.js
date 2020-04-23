@@ -4,23 +4,27 @@ require('dotenv').config()
 
 const userRouter = require('./routes/employee');
 const gifsRouter = require('./routes/gifs');
+const articlesRouter = require("./routes/articles");
 
 const app = express();
 const port = process.env.PORT || 4000;
 
-console.log(process.env)
+
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({
+  extended: false
+}));
 
 app.use('/api/auth', userRouter);
-app.use("/api/gif", gifsRouter);
+app.use('/api/gifs', gifsRouter);
+app.use('/api/articles', articlesRouter);
 
 
 app.get('/', (req, res) => {
-    res.send('Welcome to my API!');
-  });
+  res.send('Welcome to my API!');
+});
 
 
 app.server = app.listen(port, () => {
-    console.log(`Running on port ${port}`);
+  console.log(`Running on port ${port}`);
 });
