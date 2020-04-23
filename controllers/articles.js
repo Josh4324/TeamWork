@@ -1,5 +1,6 @@
 const {
-    Pool
+    Pool,
+    Client
 } = require('pg');
 const jwt = require('jsonwebtoken');
 const uniqid = require('uniqid');
@@ -13,9 +14,39 @@ const config = {
 };
 
 const pool = new Pool(config)
+const client = new Client(config);
+client.connect();
+
+const createArticleTable = `
+CREATE TABLE IF NOT EXISTS articles (
+    id serial primary key,
+	user_id text not null ,
+	article_id text not null unique,
+	article text not null,
+	title text not null,
+	createdOn TIMESTAMP not null
+);
+`
+
+const createArticleCommentTable = `
+CREATE TABLE IF NOT EXISTS articleComments (
+    id serial primary key,
+	user_id text not null,
+	article_id text not null,
+	comment_id text not null unique,
+	comment text not null,
+	createdOn TIMESTAMP not null
+);
+`
 
 
 exports.createArticle = (req, res, next) => {
+    client.query((createArticleTable), (err, res) => {
+        if (err) {
+            return;
+        }
+    });
+
     let text = 'INSERT INTO articles (user_id,article_id,article,title,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *'
     let article_id = uniqid();
     const token = req.headers.authorization.split(" ")[1];
@@ -44,10 +75,14 @@ exports.createArticle = (req, res, next) => {
             }
         )
 
-
 };
 
 exports.addComment = (req, res, next) => {
+    client.query((createArticleCommentTable), (err, res) => {
+        if (err) {
+            return;
+        }
+    });
     let article_id = req.params.article_id;
     let text = 'INSERT INTO articleComments (user_id,article_id,comment_id,comment,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *'
     let comment_id = uniqid();
@@ -76,7 +111,7 @@ exports.addComment = (req, res, next) => {
             }
         )
 
-
+    client.end();
 };
 
 exports.editArticle = (req, res, next) => {

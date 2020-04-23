@@ -1,6 +1,7 @@
 const cloudinary = require('cloudinary').v2;
 const {
   Pool,
+  Client
 } = require('pg');
 const jwt = require('jsonwebtoken');
 const uniqid = require('uniqid');
@@ -19,10 +20,38 @@ const config = {
   port: process.env.DB_PORT,
 };
 
-const pool = new Pool(config);
+const pool = new Pool(config)
+const client = new Client(config);
+client.connect();
+
+const createGifTable = `
+CREATE TABLE IF NOT EXISTS gifs (
+  id serial primary key,
+	user_id text not null ,
+	gif_id text not null unique,
+	gif_url text not null,
+	title text not null,
+	createdOn TIMESTAMP not null
+);
+`
+const createGifCommentTable = `
+CREATE TABLE IF NOT EXISTS gifComments (
+  id serial primary key,
+	user_id text not null,
+	gif_id text not null,
+	comment_id text not null unique,
+	comment text not null,
+	createdOn TIMESTAMP not null
+);
+`
 
 
 exports.createGif = (req, res, next) => {
+  client.query((createGifTable), (err, res) => {
+    if (err) {
+      return;
+    }
+  });
   const text = 'INSERT INTO gifs (user_id,gif_id,gif_url,title,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *';
   let gif_url;
   const gif_id = uniqid();
@@ -68,6 +97,11 @@ exports.createGif = (req, res, next) => {
 
 
 exports.addComment = (req, res, next) => {
+  client.query((createGifCommentTable), (err, res) => {
+    if (err) {
+      return;
+    }
+  });
   const {
     gif_id
   } = req.params;
@@ -99,23 +133,6 @@ exports.addComment = (req, res, next) => {
         });
       },
     );
-};
-
-
-exports.getAllGif = (req, res, next) => {
-  const text = 'SELECT * FROM gifs';
-  pool.query(text).then((gifs) => {
-      results = gifs.rows;
-      res.status(200).json({
-        status: 'Success',
-        data: results,
-      });
-    })
-    .catch((error) => {
-      res.status(500).json({
-        error,
-      });
-    });
 };
 
 exports.deleteGif = (req, res, next) => {
