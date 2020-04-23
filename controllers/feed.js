@@ -13,22 +13,30 @@ const config = {
 };
 
 const pool = new Pool(config);
+const compare = (a, b) => {
+    const time1 = a.createdon.getTime();
+    const time2 = b.createdon.getTime();
+
+    let comparison = 0;
+    if (time1 > time2) {
+        comparison = 1;
+    } else if (time1 < time2) {
+        comparison = -1;
+    }
+    return comparison * -1;
+}
 
 
 exports.getAllArticlesAndGifs = (req, res, next) => {
     const text = 'SELECT * FROM gifs';
     const text2 = 'SELECT * FROM articles';
-    let result1, result2, allresult
+    let results1, results2, allresult
     pool.query(text).then((gifs) => {
             results1 = gifs.rows;
             pool.query(text2).then((articles) => {
                     results2 = articles.rows;
-                    allresult = [...results1, ...results2]
-                    let time = allresult[0].createdon
-                    let h = time.getHours()
-                    let m = time.getMinutes()
-                    let s = time.getSeconds()
-                    console.log("time", h, m, s);
+                    allresult = [...results1, ...results2];
+                    allresult.sort(compare);
                     res.status(200).json({
                         status: 'Success',
                         data: allresult,
@@ -43,7 +51,7 @@ exports.getAllArticlesAndGifs = (req, res, next) => {
         })
         .catch((error) => {
             res.status(500).json({
-                error,
+                error: error
             });
         });
 };

@@ -158,3 +158,35 @@ exports.deleteGif = (req, res, next) => {
       },
     );
 };
+
+exports.getOneGif = (req, res, next) => {
+  const {
+    gif_id
+  } = req.params;
+  let text = 'SELECT * from gifs where gif_id = $1';
+  let text2 = 'SELECT * from gifComments where gif_id = $1'
+  let value = [gif_id];
+  let result;
+  pool.query(text, value).then((data1) => {
+      result = data1.rows;
+      pool.query(text2, value).then((data) => {
+        let comments = data.rows;
+        res.status(200).json({
+          status: 'Success',
+          data: {
+            "id": result[0].id,
+            "user_id": result[0].user_id,
+            "createdon": result[0].createdon,
+            "title": result[0].title,
+            "url": result[0].gif_url,
+            "comments": comments
+          }
+        })
+      })
+    })
+    .catch((error) => {
+      res.status(500).json({
+        error: error
+      });
+    });
+};

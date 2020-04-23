@@ -178,3 +178,33 @@ exports.deleteArticle = (req, res, next) => {
             }
         )
 };
+
+exports.getOneArticle = (req, res, next) => {
+    let article_id = req.params.article_id;
+    let text = 'SELECT * from articles where article_id = $1';
+    let text2 = 'SELECT * from articleComments where article_id = $1'
+    let value = [article_id];
+    let result;
+    pool.query(text, value).then((data1) => {
+            result = data1.rows;
+            pool.query(text2, value).then((data) => {
+                let comments = data.rows;
+                res.status(200).json({
+                    status: 'Success',
+                    data: {
+                        "id": result[0].id,
+                        "user_id": result[0].user_id,
+                        "createdon": result[0].createdon,
+                        "title": result[0].title,
+                        "article": result[0].article,
+                        "comments": comments
+                    }
+                })
+            })
+        })
+        .catch((error) => {
+            res.status(500).json({
+                error: error
+            });
+        });
+};
