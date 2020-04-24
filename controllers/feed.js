@@ -28,6 +28,7 @@ const compare = (a, b) => {
 
 
 exports.getAllArticlesAndGifs = (req, res, next) => {
+    const category = req.query.category;
     const text = 'SELECT * FROM gifs';
     const text2 = 'SELECT * FROM articles';
     let results1, results2, allresult
@@ -37,9 +38,12 @@ exports.getAllArticlesAndGifs = (req, res, next) => {
                     results2 = articles.rows;
                     allresult = [...results1, ...results2];
                     allresult.sort(compare);
+                    newresult = allresult.filter((item) => {
+                        return item.category === category
+                    })
                     res.status(200).json({
                         status: 'Success',
-                        data: allresult,
+                        data: newresult,
                     })
                 })
                 .catch((error) => {

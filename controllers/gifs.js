@@ -30,7 +30,9 @@ CREATE TABLE IF NOT EXISTS gifs (
 	user_id text not null ,
 	gif_id text not null unique,
 	gif_url text not null,
-	title text not null,
+  title text not null,
+  category text,
+  flag boolean,
 	createdOn TIMESTAMP not null
 );
 `
@@ -40,7 +42,8 @@ CREATE TABLE IF NOT EXISTS gifComments (
 	user_id text not null,
 	gif_id text not null,
 	comment_id text not null unique,
-	comment text not null,
+  comment text not null,
+  flag boolean,
 	createdOn TIMESTAMP not null
 );
 `
@@ -52,7 +55,7 @@ exports.createGif = (req, res, next) => {
       return;
     }
   });
-  const text = 'INSERT INTO gifs (user_id,gif_id,gif_url,title,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *';
+  const text = 'INSERT INTO gifs (user_id,gif_id,gif_url,title,category,createdon) VALUES($1,$2,$3,$4,$5,$6) RETURNING *';
   let gif_url;
   const gif_id = uniqid();
   const token = req.headers.authorization.split(' ')[1];
@@ -64,10 +67,11 @@ exports.createGif = (req, res, next) => {
       const createdon = new Date();
       console.log(gif_id);
       const {
-        title
+        title,
+        category
       } = req.body;
       console.log(user_id);
-      const values = [user_id, gif_id, gif_url, title, createdon];
+      const values = [user_id, gif_id, gif_url, title, category, createdon];
       pool.query(text, values).then(() => {
           res.status(201).json({
             status: 'Success',
@@ -189,4 +193,95 @@ exports.getOneGif = (req, res, next) => {
         error: error
       });
     });
+};
+
+exports.flagComment = (req, res, next) => {
+  let comment_id = req.params.comment_id;
+  let text = 'UPDATE gifComments SET flag = ($1) where comment_id = ($2)';
+  let flag = req.body.flag;
+  let value = [flag, comment_id];
+
+  pool.query(text, value).then(() => {
+      res.status(201).json({
+        status: 'Success',
+        data: {
+          "message": "flag set successfully",
+        }
+      });
+    })
+    .catch(
+      (error) => {
+        console.log(error)
+        res.status(500).json({
+          error: error
+        });
+      }
+    )
+};
+
+exports.flagGif = (req, res, next) => {
+  let gif_id = req.params.gif_id;
+  let text = 'UPDATE gifs SET flag = ($1) where gif_id = ($2)';
+  let flag = req.body.flag;
+  let value = [flag, gif_id];
+
+  pool.query(text, value).then(() => {
+      res.status(201).json({
+        status: 'Success',
+        data: {
+          "message": "flag set successfully",
+        }
+      });
+    })
+    .catch(
+      (error) => {
+        console.log(error)
+        res.status(500).json({
+          error: error
+        });
+      }
+    )
+};
+
+
+exports.deleteFlagComment = (req, res, next) => {
+  const text = 'DELETE from gifComments where flag = $1';
+  const value = [true];
+  pool.query(text, value).then(() => {
+      res.status(200).json({
+        status: 'Success',
+        data: {
+          message: 'All flagged Gifs comments successfully deleted',
+        },
+      });
+    })
+    .catch(
+      (error) => {
+        console.log(error);
+        res.status(500).json({
+          error,
+        });
+      },
+    );
+};
+
+exports.deleteFlagGif = (req, res, next) => {
+  const text = 'DELETE from gifs where flag = $1';
+  const value = [true];
+  pool.query(text, value).then(() => {
+      res.status(200).json({
+        status: 'Success',
+        data: {
+          message: 'All flagged Gifs successfully deleted',
+        },
+      });
+    })
+    .catch(
+      (error) => {
+        console.log(error);
+        res.status(500).json({
+          error,
+        });
+      },
+    );
 };

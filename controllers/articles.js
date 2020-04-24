@@ -23,7 +23,9 @@ CREATE TABLE IF NOT EXISTS articles (
 	user_id text not null ,
 	article_id text not null unique,
 	article text not null,
-	title text not null,
+    title text not null,
+    category text,
+    flag boolean,
 	createdOn TIMESTAMP not null
 );
 `
@@ -34,7 +36,8 @@ CREATE TABLE IF NOT EXISTS articleComments (
 	user_id text not null,
 	article_id text not null,
 	comment_id text not null unique,
-	comment text not null,
+    comment text not null,
+    flag boolean,
 	createdOn TIMESTAMP not null
 );
 `
@@ -47,7 +50,7 @@ exports.createArticle = (req, res, next) => {
         }
     });
 
-    let text = 'INSERT INTO articles (user_id,article_id,article,title,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *'
+    let text = 'INSERT INTO articles (user_id,article_id,article,title,category,createdon) VALUES($1,$2,$3,$4,$5,$6) RETURNING *'
     let article_id = uniqid();
     const token = req.headers.authorization.split(" ")[1];
     const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
@@ -55,7 +58,8 @@ exports.createArticle = (req, res, next) => {
     let createdon = new Date()
     let title = req.body.title;
     let article = req.body.article;
-    let values = [user_id, article_id, article, title, createdon]
+    let category = req.body.category;
+    let values = [user_id, article_id, article, title, category, createdon]
     pool.query(text, values).then(() => {
             res.status(201).json({
                 status: 'Success',
@@ -207,4 +211,94 @@ exports.getOneArticle = (req, res, next) => {
                 error: error
             });
         });
+};
+
+exports.flagComment = (req, res, next) => {
+    let comment_id = req.params.comment_id;
+    let text = 'UPDATE articleComments SET flag = ($1) where comment_id = ($2)';
+    let flag = req.body.flag;
+    let value = [flag, comment_id];
+
+    pool.query(text, value).then(() => {
+            res.status(201).json({
+                status: 'Success',
+                data: {
+                    "message": "flag set successfully",
+                }
+            });
+        })
+        .catch(
+            (error) => {
+                console.log(error)
+                res.status(500).json({
+                    error: error
+                });
+            }
+        )
+};
+
+exports.flagArticle = (req, res, next) => {
+    let article_id = req.params.article_id;
+    let text = 'UPDATE articles SET flag = ($1) where article_id = ($2)';
+    let flag = req.body.flag;
+    let value = [flag, article_id];
+
+    pool.query(text, value).then(() => {
+            res.status(201).json({
+                status: 'Success',
+                data: {
+                    "message": "flag set successfully",
+                }
+            });
+        })
+        .catch(
+            (error) => {
+                console.log(error)
+                res.status(500).json({
+                    error: error
+                });
+            }
+        )
+};
+
+exports.deleteFlagArticle = (req, res, next) => {
+    const text = 'DELETE from articles where flag = $1';
+    const value = [true];
+    pool.query(text, value).then(() => {
+            res.status(200).json({
+                status: 'Success',
+                data: {
+                    message: 'All flagged articles successfully deleted',
+                },
+            });
+        })
+        .catch(
+            (error) => {
+                console.log(error);
+                res.status(500).json({
+                    error,
+                });
+            },
+        );
+};
+
+exports.deleteFlagComment = (req, res, next) => {
+    const text = 'DELETE from articleComments where flag = $1';
+    const value = [true];
+    pool.query(text, value).then(() => {
+            res.status(200).json({
+                status: 'Success',
+                data: {
+                    message: 'All flagged articles comments successfully deleted',
+                },
+            });
+        })
+        .catch(
+            (error) => {
+                console.log(error);
+                res.status(500).json({
+                    error,
+                });
+            },
+        );
 };
