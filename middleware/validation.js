@@ -24,8 +24,17 @@ exports.signUpValidationRules = () => {
     ]
 }
 
-exports.userValidation = (req, res, next) => {
-    console.log("checking");
+exports.signInValidationRules = () => {
+    console.log("val");
+    return [
+        body("email").notEmpty().isEmail().normalizeEmail().withMessage("Email is required"),
+        body("password").notEmpty().isLength({
+            min: 5
+        }).withMessage("Password must have at least 5 characters"),
+    ]
+}
+
+exports.validation = (req, res, next) => {
     try {
         console.log("err");
         const errors = validationResult(req)
