@@ -59,7 +59,7 @@ exports.createGif = (req, res, next) => {
   let gif_url;
   const gif_id = uniqid();
   const token = req.headers.authorization.split(' ')[1];
-  const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
+  const decodedToken = jwt.verify(token, secret);
   const user_id = decodedToken.userId;
   cloudinary.uploader.upload(req.body.gif_url, (error, result) => {
     if (result) {
@@ -112,7 +112,7 @@ exports.addComment = (req, res, next) => {
   const text = 'INSERT INTO gifComments (user_id,gif_id,comment_id,comment,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *';
   const comment_id = uniqid();
   const token = req.headers.authorization.split(' ')[1];
-  const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
+  const decodedToken = jwt.verify(token, secret);
   const user_id = decodedToken.userId;
   const createdon = new Date();
   const {

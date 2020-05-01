@@ -12,7 +12,8 @@ const config = {
     password: process.env.DB_PASS,
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
-    port: process.env.DB_PORT
+    port: process.env.DB_PORT,
+    secret: process.env.SECRET
 };
 
 const pool = new Pool(config);
@@ -76,7 +77,7 @@ exports.signup = (req, res, next) => {
                                         user_id: user_id,
                                         jobRole: jobRole
                                     },
-                                    'RANDOM_TOKEN_SECRET', {
+                                    secret, {
                                         expiresIn: '24h'
                                     });
                                 res.status(201).json({
@@ -134,7 +135,7 @@ exports.login = (req, res, next) => {
                                 userId: user_id,
                                 jobRole: jobrole
                             },
-                            'RANDOM_TOKEN_SECRET', {
+                            secret, {
                                 expiresIn: '24h'
                             });
 

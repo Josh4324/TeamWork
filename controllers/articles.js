@@ -53,7 +53,7 @@ exports.createArticle = (req, res, next) => {
     let text = 'INSERT INTO articles (user_id,article_id,article,title,category,createdon) VALUES($1,$2,$3,$4,$5,$6) RETURNING *'
     let article_id = uniqid();
     const token = req.headers.authorization.split(" ")[1];
-    const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
+    const decodedToken = jwt.verify(token, secret);
     const user_id = decodedToken.userId;
     let createdon = new Date()
     let title = req.body.title;
@@ -91,7 +91,7 @@ exports.addComment = (req, res, next) => {
     let text = 'INSERT INTO articleComments (user_id,article_id,comment_id,comment,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *'
     let comment_id = uniqid();
     const token = req.headers.authorization.split(" ")[1];
-    const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
+    const decodedToken = jwt.verify(token, secret);
     const user_id = decodedToken.userId;
     let createdon = new Date()
     let comment = req.body.comment;

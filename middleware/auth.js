@@ -3,8 +3,7 @@ const jwt = require('jsonwebtoken');
 exports.authorizationsignup = (req, res, next) => {
     try {
         const token = req.headers.authorization.split(" ")[1];
-        const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
-        console.log(decodedToken);
+        const decodedToken = jwt.verify(token, secret);
         const role = decodedToken.jobRole;
         if (role !== "admin") {
 
@@ -27,7 +26,7 @@ exports.authorization = (req, res, next) => {
     try {
         const token = req.headers.authorization.split(" ")[1];
 
-        const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
+        const decodedToken = jwt.verify(token, secret);
         const role = decodedToken.jobRole;
         if (!role) {
             return res.status(401).json({

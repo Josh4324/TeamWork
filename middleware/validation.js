@@ -4,7 +4,6 @@ const {
 } = require('express-validator');
 
 exports.signUpValidationRules = () => {
-    console.log("val");
     return [
         // username must be an email
         body("firstName").notEmpty().isLength({
@@ -25,12 +24,37 @@ exports.signUpValidationRules = () => {
 }
 
 exports.signInValidationRules = () => {
-    console.log("val");
     return [
         body("email").notEmpty().isEmail().normalizeEmail().withMessage("Email is required"),
         body("password").notEmpty().isLength({
             min: 5
         }).withMessage("Password must have at least 5 characters"),
+    ]
+}
+
+exports.postGifsRules = () => {
+    return [
+        body("gif_url").notEmpty().withMessage("Gif is required"),
+        body("title").notEmpty().withMessage("title must not be empty"),
+    ]
+}
+
+exports.postArticlesRules = () => {
+    return [
+        body("article").notEmpty().withMessage("Article is required"),
+        body("title").notEmpty().withMessage("title must not be empty"),
+    ]
+}
+
+exports.postCommentRules = () => {
+    return [
+        body("comment").notEmpty().withMessage("comment is required"),
+    ]
+}
+
+exports.updateArticleRules = () => {
+    return [
+        body("article").notEmpty().withMessage("Article is required"),
     ]
 }
 
