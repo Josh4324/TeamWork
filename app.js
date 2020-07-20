@@ -1,11 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-require('dotenv').config()
+require('dotenv').config();
 
 const userRouter = require('./routes/employee');
 const feedRouter = require('./routes/feed');
 const gifsRouter = require('./routes/gifs');
-const articlesRouter = require("./routes/articles");
+const articlesRouter = require('./routes/articles');
 
 
 const app = express();
@@ -14,7 +14,7 @@ const port = process.env.PORT || 4000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
-  extended: false
+  extended: false,
 }));
 
 app.use('/api/auth', userRouter);
@@ -29,5 +29,9 @@ app.get('/', (req, res) => {
 
 
 app.server = app.listen(port, () => {
+  // eslint-disable-next-line no-console
   console.log(`Running on port ${port}`);
 });
+
+
+module.exports = app;

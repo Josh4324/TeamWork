@@ -13,7 +13,6 @@ const config = {
     host: process.env.DB_HOST,
     database: process.env.DB_NAME,
     port: process.env.DB_PORT,
-    secret: process.env.SECRET
 };
 
 const pool = new Pool(config);
@@ -77,7 +76,7 @@ exports.signup = (req, res, next) => {
                                         user_id: user_id,
                                         jobRole: jobRole
                                     },
-                                    secret, {
+                                    process.env.SECRET, {
                                         expiresIn: '24h'
                                     });
                                 res.status(201).json({
@@ -120,7 +119,6 @@ exports.login = (req, res, next) => {
                 }
                 bcrypt.compare(req.body.password, user.rows[0].password).then(
                     (valid) => {
-                        console.log(valid)
                         if (!valid) {
                             return res.status(401).json({
                                 error: 'Incorrect password!'
@@ -135,7 +133,7 @@ exports.login = (req, res, next) => {
                                 userId: user_id,
                                 jobRole: jobrole
                             },
-                            secret, {
+                            process.env.SECRET, {
                                 expiresIn: '24h'
                             });
 

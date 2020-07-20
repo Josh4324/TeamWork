@@ -26,9 +26,7 @@ exports.signUpValidationRules = () => {
 exports.signInValidationRules = () => {
     return [
         body("email").notEmpty().isEmail().normalizeEmail().withMessage("Email is required"),
-        body("password").notEmpty().isLength({
-            min: 5
-        }).withMessage("Password must have at least 5 characters"),
+        body("password").notEmpty()
     ]
 }
 
@@ -60,7 +58,6 @@ exports.updateArticleRules = () => {
 
 exports.validation = (req, res, next) => {
     try {
-        console.log("err");
         const errors = validationResult(req)
         if (errors.isEmpty()) {
             return next()

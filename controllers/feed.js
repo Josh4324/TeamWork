@@ -29,18 +29,23 @@ const compare = (a, b) => {
 
 exports.getAllArticlesAndGifs = (req, res, next) => {
     const category = req.query.category;
-    const text = 'SELECT * FROM gifs';
-    const text2 = 'SELECT * FROM articles';
-    let results1, results2, allresult
+    const text = 'SELECT * FROM gifs INNER JOIN  gifComments ON gifs.gif_id = gifComments.gif_id';
+    const text2 = 'SELECT * FROM articles INNER JOIN articleComments ON articles.article_id = articleComments.article_id';
+    let results1, results2, allresult, newresult
     pool.query(text).then((gifs) => {
             results1 = gifs.rows;
             pool.query(text2).then((articles) => {
                     results2 = articles.rows;
                     allresult = [...results1, ...results2];
                     allresult.sort(compare);
-                    newresult = allresult.filter((item) => {
-                        return item.category === category
-                    })
+                    if (category) {
+                        newresult = allresult.filter((item) => {
+                            return item.category === category
+                        })
+                    } else {
+                        newresult = allresult
+                    }
+
                     res.status(200).json({
                         status: 'Success',
                         data: newresult,
