@@ -5,38 +5,36 @@ const {
     Client
 } = require('pg');
 const uniqid = require('uniqid');
-
-
-const config = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    port: process.env.DB_PORT,
-};
-
-const pool = new Pool(config);
-const client = new Client(config);
+const {
+    createUserTable
+} = require("../Utils/query");
+const connectionString = process.env.CONNECTION_STRING
+const pool = new Pool(connectionString);
+const client = new Client(connectionString);
 client.connect()
-
-const createUserTable = `
-CREATE TABLE IF NOT EXISTS users (
-  id serial primary key,
-  user_id text not null unique,
-  firstName text not null,
-  lastName text not null,
-  email text not null,
-  jobRole text not null,
-  gender text not null,
-  department text not null,
-  address text not null,
-  password text not null,
-  createdOn TIMESTAMP not null
-);
-`
+const {
+    errorResMsg,
+    successResMsg
+} = require("../Utils/response");
 
 
-exports.signup = (req, res, next) => {
+
+exports.signup = (req, res) => {
+    let {
+        firstName,
+        lastName,
+        email,
+        jobRole,
+        gender,
+        department,
+        address
+    } = req.body
+    let query = `INSERT INTO users (user_id, firstName, lastName, email, jobRole, gender, department, address, password,createdon) 
+                        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9,$10) RETURNING *`;
+    const query1 = 'SELECT email from users where email = $1';
+    let createdon = new Date()
+    let user_id = uniqid()
+    let value1 = [req.body.email];
     client.query((createUserTable), (err, res) => {
         if (err) {
             return;
@@ -44,114 +42,80 @@ exports.signup = (req, res, next) => {
     });
     bcrypt.hash(req.body.password, 10).then(
         (hash) => {
-            let text = `INSERT INTO users (user_id, firstName, lastName, email, jobRole, gender, department, address, password,createdon) 
-                        VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9,$10) RETURNING *`;
-            const text1 = 'SELECT email from users where email = $1';
-            let {
-                firstName,
-                lastName,
-                email,
-                jobRole,
-                gender,
-                department,
-                address
-            } = req.body
-            let createdon = new Date()
-            let user_id = uniqid()
             let values = [user_id, firstName, lastName, email, jobRole, gender, department, address, hash, createdon];
-            let value1 = [req.body.email];
-            pool.query(text1, value1).then((user) => {
+            pool.query(query1, value1).then((user) => {
                     if (user.rows.length !== 0) {
-                        return res.status(423).json({
-                            status: "success",
-                            data: {
-                                "message": "User already exists",
-                            }
-                        });
+                        const data = {
+                            "message": "User already exists",
+                        }
+                        successResMsg(res, 423, data);
                     } else {
-
-                        pool.query(text, values).then(
-                            (result) => {
-                                const token = jwt.sign({
-                                        user_id: user_id,
-                                        jobRole: jobRole
-                                    },
-                                    process.env.SECRET, {
-                                        expiresIn: '24h'
-                                    });
-                                res.status(201).json({
-                                    status: "success",
-                                    data: {
-                                        "message": "User account successfully created",
-                                        "token": token,
-                                        "userId": user_id
-                                    }
+                        pool.query(query, values).then(() => {
+                            const token = jwt.sign({
+                                    user_id: user_id,
+                                    jobRole: jobRole
+                                },
+                                process.env.SECRET, {
+                                    expiresIn: '24h'
                                 });
+                            const data = {
+                                "message": "User account successfully created",
+                                "token": token,
+                                "userId": user_id
                             }
-                        )
+                            successResMsg(res, 200, data);
+                        })
 
                     }
                 })
-                .catch(
-                    (error) => {
-                        res.status(500).json({
-                            error: error
-                        })
-                    }
-                )
+                .catch((error) => {
+                    errorResMsg(res, 500, error);
+                })
         }
     )
     client.end();
 };
 
 
-exports.login = (req, res, next) => {
-    let text = 'SELECT * from users where email = $1'
+exports.login = (req, res) => {
+    let query = 'SELECT * from users where email = $1'
     let value = [req.body.email]
-    pool.query(text, value)
-        .then(
-            (user) => {
-
-                if (user.rows.length === 0) {
-                    return res.status(401).json({
-                        error: "User not found!"
-                    });
+    pool.query(query, value)
+        .then((user) => {
+            if (user.rows.length === 0) {
+                const error = {
+                    error: "User not found!"
                 }
-                bcrypt.compare(req.body.password, user.rows[0].password).then(
-                    (valid) => {
-                        if (!valid) {
-                            return res.status(401).json({
-                                error: 'Incorrect password!'
-                            });
-                        }
-                        let {
-                            user_id,
-                            jobrole
-                        } = user.rows[0]
-
-                        const token = jwt.sign({
-                                userId: user_id,
-                                jobRole: jobrole
-                            },
-                            process.env.SECRET, {
-                                expiresIn: '24h'
-                            });
-
-                        res.status(200).json({
-                            status: "success",
-                            data: {
-                                "token": token,
-                                "userId": user_id
-                            }
-                        })
-                    }
-                ).catch(
-                    (error) => {
-                        res.status(500).json({
-                            error: error
-                        });
-                    }
-                );
+                errorResMsg(res, 401, error);
             }
-        );
+            bcrypt.compare(req.body.password, user.rows[0].password).then(
+                (valid) => {
+                    if (!valid) {
+                        const error = {
+                            error: 'Incorrect password!'
+                        }
+                        errorResMsg(res, 401, error);
+                    }
+                    let {
+                        user_id,
+                        jobrole
+                    } = user.rows[0]
+
+                    const token = jwt.sign({
+                            userId: user_id,
+                            jobRole: jobrole
+                        },
+                        process.env.SECRET, {
+                            expiresIn: '24h'
+                        });
+                    const data = {
+                        "token": token,
+                        "userId": user_id
+                    }
+                    successResMsg(res, 200, data);
+                }
+            ).catch((error) => {
+                errorResMsg(res, 500, error);
+            });
+        });
 };

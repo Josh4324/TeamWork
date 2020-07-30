@@ -7,8 +7,8 @@ const validation = require("../middleware/validation");
 
 const userController = require('../controllers/employee')
 
-router.post('/create-user', auth.authorizationsignup, validation.signUpValidationRules(), validation.validation, userController.signup);
-router.post('/signin', validation.signInValidationRules(), validation.validation, userController.login);
+router.post('/create-user', validation.signUpValidationRules(), validation.validation, userController.signup);
+router.post('/login', validation.signInValidationRules(), validation.validation, userController.login);
 
 
 

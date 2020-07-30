@@ -4,302 +4,235 @@ const {
 } = require('pg');
 const jwt = require('jsonwebtoken');
 const uniqid = require('uniqid');
-
-const config = {
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
-};
-
-const pool = new Pool(config);
-const client = new Client(config);
+const {
+  createArticleTable,
+  createArticleCommentTable
+} = require("../Utils/query");
+const {
+  errorResMsg,
+  successResMsg
+} = require("../Utils/response");
+const connectionString = process.env.CONNECTION_STRING
+const pool = new Pool(connectionString);
+const client = new Client(connectionString);
 client.connect();
 
-const createArticleTable = `
-CREATE TABLE IF NOT EXISTS articles (
-    id serial primary key,
-	user_id text not null ,
-	article_id text not null unique,
-	article text not null,
-    title text not null,
-    category text,
-    flag boolean,
-	createdOn TIMESTAMP not null
-);
-`;
-
-const createArticleCommentTable = `
-CREATE TABLE IF NOT EXISTS articleComments (
-    id serial primary key,
-	user_id text not null,
-	article_id text not null,
-	comment_id text not null unique,
-    comment text not null,
-    flag boolean,
-	createdOn TIMESTAMP not null
-);
-`;
 
 
-exports.createArticle = (req, res, next) => {
+exports.createArticle = (req, res) => {
   client.query((createArticleTable), (err, res) => {
     if (err) {
-
+      return
     }
   });
 
-  const text = 'INSERT INTO articles (user_id,article_id,article,title,category,createdon) VALUES($1,$2,$3,$4,$5,$6) RETURNING *';
+  const query = 'INSERT INTO articles (user_id,article_id,article,title,category,createdon) VALUES($1,$2,$3,$4,$5,$6) RETURNING *';
   const article_id = uniqid();
   const token = req.headers.authorization.split(' ')[1];
   const decodedToken = jwt.verify(token, process.env.SECRET);
   const user_id = decodedToken.userId;
   const createdon = new Date();
-  const { title } = req.body;
-  const { article } = req.body;
-  const { category } = req.body;
+  const {
+    title,
+    article,
+    category
+  } = req.body;
   const values = [user_id, article_id, article, title, category, createdon];
-  pool.query(text, values).then(() => {
-    res.status(201).json({
-      status: 'Success',
-      data: {
+  pool.query(query, values).then(() => {
+      const data = {
         articleId: article_id,
         message: 'Article successfully posted',
         createdOn: createdon,
         title,
-      },
-    });
-  })
+      }
+      successResMsg(res, 200, data);
+    })
     .catch(
       (error) => {
-        res.status(500).json({
-          error,
-        });
+        errorResMsg(res, 500, error);
       },
     );
 };
 
-exports.addComment = (req, res, next) => {
+exports.addComment = (req, res) => {
   client.query((createArticleCommentTable), (err, res) => {
     if (err) {
-
+      return
     }
   });
-  const { article_id } = req.params;
-  const text = 'INSERT INTO articleComments (user_id,article_id,comment_id,comment,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *';
+  const {
+    article_id
+  } = req.params;
+  const {
+    comment
+  } = req.body;
+  const query = 'INSERT INTO articleComments (user_id,article_id,comment_id,comment,createdon) VALUES($1,$2,$3,$4,$5) RETURNING *';
   const comment_id = uniqid();
   const token = req.headers.authorization.split(' ')[1];
   const decodedToken = jwt.verify(token, process.env.SECRET);
   const user_id = decodedToken.userId;
   const createdon = new Date();
-  const { comment } = req.body;
   const values = [user_id, article_id, comment_id, comment, createdon];
-  pool.query(text, values).then(() => {
-    res.status(201).json({
-      status: 'Success',
-      data: {
+  pool.query(query, values).then(() => {
+      const data = {
         commentId: comment_id,
         message: 'Comment successfully created',
         createdOn: createdon,
         comment,
-      },
-    });
-  })
+      }
+      successResMsg(res, 201, data);
+    })
     .catch(
       (error) => {
-        res.status(500).json({
-          error,
-        });
+        errorResMsg(res, 500, error);
       },
     );
 
   client.end();
 };
 
-exports.editArticle = (req, res, next) => {
-  const { article_id } = req.params;
-  const text = 'UPDATE articles SET article = ($1) where article_id = ($2)';
-  const text2 = 'SELECT * from articles where article_id = $1';
-  const value2 = [article_id];
-  const { article } = req.body;
+exports.editArticle = (req, res) => {
+  const {
+    article_id
+  } = req.params;
+  const {
+    article
+  } = req.body;
+  const query = 'UPDATE articles SET article = ($1) where article_id = ($2)';
   const value = [article, article_id];
-
-  pool.query(text, value).then(() => {
-    pool.query(text2, value2).then((result) => {
-      const data = result.rows;
-      const {
-        article,
-        title,
-      } = data[0];
-      res.status(201).json({
-        status: 'Success',
-        data: {
-          articleId: article_id,
-          message: 'Article successfully updated',
-          title,
-          article,
-        },
-      });
-    }).catch(
-      (error) => {
-        res.status(500).json({
-          error,
-        });
-      },
-    );
+  pool.query(query, value).then((result) => {
+    const data = {
+      message: "article updated successfully",
+      article_id: article_id
+    }
+    successResMsg(res, 201, data);
+  }).catch((error) => {
+    errorResMsg(res, 500, error);
   })
-    .catch(
-      (error) => {
-        res.status(500).json({
-          error,
-        });
-      },
-    );
-};
+}
 
-exports.deleteArticle = (req, res, next) => {
-  const { article_id } = req.params;
-  const text = 'DELETE from articles where article_id = $1';
+
+exports.deleteArticle = (req, res) => {
+  const {
+    article_id
+  } = req.params;
+  const query = 'DELETE from articles where article_id = $1';
   const value = [article_id];
-  pool.query(text, value).then(() => {
-    res.status(200).json({
-      status: 'Success',
-      data: {
-        message: 'Article successfully deleted',
-      },
-    });
-  })
+  pool.query(query, value).then(() => {
+      data = {
+        message: 'Article successfully deleted'
+      }
+      successResMsg(res, 200, data);
+    })
     .catch(
       (error) => {
-        console.log(error);
-        res.status(500).json({
-          error,
-        });
+        errorResMsg(res, 500, error);
       },
     );
 };
 
-exports.getOneArticle = (req, res, next) => {
-  const { article_id } = req.params;
-  const text = 'SELECT * from articles where article_id = $1';
-  const text2 = 'SELECT * from articleComments where article_id = $1';
+exports.getOneArticle = (req, res) => {
+  const {
+    article_id
+  } = req.params;
+  const query = 'SELECT * from articles where article_id = $1';
+  const query2 = 'SELECT * from articleComments where article_id = $1';
   const value = [article_id];
   let result;
-  pool.query(text, value).then((data1) => {
-    result = data1.rows;
-    pool.query(text2, value).then((data) => {
-      const comments = data.rows;
-      res.status(200).json({
-        status: 'Success',
-        data: {
+  pool.query(query, value).then((data1) => {
+      result = data1.rows;
+      pool.query(query2, value).then((data) => {
+        const comments = data.rows;
+        const results = {
           id: result[0].id,
           user_id: result[0].user_id,
           createdon: result[0].createdon,
           title: result[0].title,
           article: result[0].article,
           comments,
-        },
+        }
+        successResMsg(res, 200, results);
+      }).catch((error) => {
+        errorResMsg(res, 500, error);
       });
-    }).catch((error) => {
-      res.status(500).json({
-        error,
-      });
-    });
-  })
+    })
     .catch((error) => {
-      res.status(500).json({
-        error,
-      });
+      errorResMsg(res, 500, error);
     });
 };
 
-exports.flagComment = (req, res, next) => {
-  const { comment_id } = req.params;
-  const text = 'UPDATE articleComments SET flag = ($1) where comment_id = ($2)';
-  const { flag } = req.body;
+exports.flagComment = (req, res) => {
+  const {
+    comment_id
+  } = req.params;
+  const {
+    flag
+  } = req.body;
+  const query = 'UPDATE articleComments SET flag = ($1) where comment_id = ($2)';
   const value = [flag, comment_id];
-
-  pool.query(text, value).then(() => {
-    res.status(201).json({
-      status: 'Success',
-      data: {
-        message: 'flag set successfully',
-      },
-    });
-  })
+  pool.query(query, value).then(() => {
+      const data = {
+        message: 'flag set successfully'
+      }
+      successResMsg(res, 201, data);
+    })
     .catch(
       (error) => {
-        console.log(error);
-        res.status(500).json({
-          error,
-        });
+        errorResMsg(res, 500, error);
       },
     );
 };
 
-exports.flagArticle = (req, res, next) => {
-  const { article_id } = req.params;
-  const text = 'UPDATE articles SET flag = ($1) where article_id = ($2)';
-  const { flag } = req.body;
+exports.flagArticle = (req, res) => {
+  const {
+    article_id
+  } = req.params;
+  const {
+    flag
+  } = req.body;
+  const query = 'UPDATE articles SET flag = ($1) where article_id = ($2)';
   const value = [flag, article_id];
-
-  pool.query(text, value).then(() => {
-    res.status(201).json({
-      status: 'Success',
-      data: {
-        message: 'flag set successfully',
-      },
-    });
-  })
+  pool.query(query, value).then(() => {
+      const data = {
+        message: 'flag set successfully'
+      }
+      successResMsg(res, 201, data);
+    })
     .catch(
       (error) => {
-        console.log(error);
-        res.status(500).json({
-          error,
-        });
+        errorResMsg(res, 500, error);
       },
     );
 };
 
-exports.deleteFlagArticle = (req, res, next) => {
-  const text = 'DELETE from articles where flag = $1';
+exports.deleteFlagArticle = (req, res) => {
+  const query = 'DELETE from articles where flag = $1';
   const value = [true];
-  pool.query(text, value).then(() => {
-    res.status(200).json({
-      status: 'Success',
-      data: {
-        message: 'All flagged articles successfully deleted',
-      },
-    });
-  })
+  pool.query(query, value).then(() => {
+      const data = {
+        message: 'All flagged articles successfully deleted'
+      }
+      successResMsg(res, 200, data);
+    })
     .catch(
       (error) => {
-        console.log(error);
-        res.status(500).json({
-          error,
-        });
+        errorResMsg(res, 500, error);
       },
     );
 };
 
-exports.deleteFlagComment = (req, res, next) => {
-  const text = 'DELETE from articleComments where flag = $1';
+exports.deleteFlagComment = (req, res) => {
+  const query = 'DELETE from articleComments where flag = $1';
   const value = [true];
-  pool.query(text, value).then(() => {
-    res.status(200).json({
-      status: 'Success',
-      data: {
-        message: 'All flagged articles comments successfully deleted',
-      },
-    });
-  })
+  pool.query(query, value).then(() => {
+      const data = {
+        message: 'All flagged articles comments successfully deleted'
+      }
+      successResMsg(res, 200, data);
+    })
     .catch(
       (error) => {
-        console.log(error);
-        res.status(500).json({
-          error,
-        });
+        errorResMsg(res, 500, error);
       },
     );
 };
