@@ -6,11 +6,11 @@ const {
     successResMsg
 } = require('../Utils/response')
 const {
+    config,
     compare,
 } = require('../Utils/helper');
-const connectionString = process.env.CONNECTION_STRING
 
-const pool = new Pool(connectionString);
+const pool = new Pool(config);
 
 
 exports.getAllArticlesAndGifs = (req, res) => {

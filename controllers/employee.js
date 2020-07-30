@@ -6,11 +6,13 @@ const {
 } = require('pg');
 const uniqid = require('uniqid');
 const {
+    config
+  } = require("../Utils/helper");
+const {
     createUserTable
 } = require("../Utils/query");
-const connectionString = process.env.CONNECTION_STRING
-const pool = new Pool(connectionString);
-const client = new Client(connectionString);
+const pool = new Pool(config);
+const client = new Client(config);
 client.connect()
 const {
     errorResMsg,

@@ -6,7 +6,8 @@ const {
 const jwt = require("jsonwebtoken");
 const uniqid = require("uniqid");
 const {
-  cloudinaryConfig,
+  config,
+  cloudinaryConfig
 } = require("../Utils/helper");
 const {
   createGifTable,
@@ -20,8 +21,8 @@ const connectionString = process.env.CONNECTION_STRING
 
 cloudinary.config(cloudinaryConfig);
 
-const pool = new Pool( connectionString);
-const client = new Client( connectionString);
+const pool = new Pool(config);
+const client = new Client(config);
 client.connect();
 
 exports.createGif = (req, res) => {

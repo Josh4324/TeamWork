@@ -9,12 +9,14 @@ const {
   createArticleCommentTable
 } = require("../Utils/query");
 const {
+  config
+} = require("../Utils/helper");
+const {
   errorResMsg,
   successResMsg
 } = require("../Utils/response");
-const connectionString = process.env.CONNECTION_STRING
-const pool = new Pool(connectionString);
-const client = new Client(connectionString);
+const pool = new Pool(config);
+const client = new Client(config);
 client.connect();
 
 
