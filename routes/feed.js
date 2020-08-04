@@ -5,8 +5,8 @@ const userController = require('../controllers/feed');
 
 
 router.get('/', auth.authorization, userController.getAllArticlesAndGifs);
-router.get('/comment/article/:article_id', auth.authorization, userController.getArticleComments);
-router.get('/comment/gif/:gif_id', auth.authorization, userController.getGifComments);
+router.get('/:article_id/comment', auth.authorization, userController.getArticleComments);
+router.get('/:gif_id/comment', auth.authorization, userController.getGifComments);
 
 
 module.exports = router;

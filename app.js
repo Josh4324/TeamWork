@@ -40,10 +40,10 @@ app.use(
 
 app.use(hpp());
 
-app.use("/v1/api/auth", userRouter);
-app.use("/v1/api/feed", feedRouter);
-app.use("/v1/api/gifs", gifsRouter);
-app.use("/v1/api/articles", articlesRouter);
+app.use("/api/v1/auth", userRouter);
+app.use("/api/v1/feed", feedRouter);
+app.use("/api/v1/gifs", gifsRouter);
+app.use("/api/v1/articles", articlesRouter);
 
 app.get("/", (req, res) => {
   res.status(200).json({
